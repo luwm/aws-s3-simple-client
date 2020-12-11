@@ -1,5 +1,6 @@
 package com.example.demo1;
 
+import com.amazonaws.HttpMethod;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
@@ -15,6 +16,7 @@ import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -130,5 +132,22 @@ public class UploadController {
                         new AwsClientBuilder.EndpointConfiguration(hostname,"")
                 ).build();
         return s3Client;
+    }
+
+    @GetMapping("/objecturl")
+    public String getObjectUrl(@RequestParam String bucketName, @RequestParam String keyName){
+        AmazonS3 s3Client = createConnect();
+        System.out.println("Generating pre-signed URL.");
+        java.util.Date expiration = new java.util.Date();
+        long expTimeMillis = expiration.getTime();
+        //最少8分钟
+        expTimeMillis += 1000 * 60 * 8;
+        expiration.setTime(expTimeMillis);
+        GeneratePresignedUrlRequest generatePresignedUrlRequest =
+                new GeneratePresignedUrlRequest(bucketName, keyName)
+                        .withMethod(HttpMethod.GET)
+                        .withExpiration(expiration);
+        URL url = s3Client.generatePresignedUrl(generatePresignedUrlRequest);
+        return url.toString();
     }
 }
